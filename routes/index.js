@@ -17,7 +17,7 @@
  * una API esta alternativa no tendría sentido.
  */
 
-const publicRoutes = require("./publicRoutes");
+const privatesRoutes = require("./privatesRoutes");
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
 
@@ -33,7 +33,7 @@ module.exports = (app) => {
 
   // app.use("/usuarios", userRoutes);
   app.use("/users", userRoutes);
-  app.use("/", publicRoutes);
+  app.use("/", privatesRoutes);
   app.use("/", authRoutes);
 };
 

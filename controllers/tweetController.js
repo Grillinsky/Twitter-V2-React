@@ -1,6 +1,10 @@
 const User = require("../models/User");
 const Tweet = require("../models/Tweet");
 
+function index(req, res) {
+  res.send("Home");
+}
+
 function create(req, res) {
   return res.render("createTweet");
 }
@@ -48,6 +52,7 @@ async function likesHandler(req, res) {
 }
 
 module.exports = {
+  index,
   create,
   store,
   destroy,
