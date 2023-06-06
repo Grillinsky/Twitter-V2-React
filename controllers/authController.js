@@ -38,15 +38,14 @@ async function signUp(req, res) {
       firstname: req.body.firstname,
       lastname: req.body.lastname,
       username: req.body.username,
-      password: bcrypt.hashSync(req.body.password, 10),
+      password: await bcrypt.hash(req.body.password, 10), // TODO: pasar el hasheo de pass al modelo buscar middlewares de mongoose
     });
 
-    // pedir el token y enviarlo junto con el  user
     if (newUser) {
       const user = await User.findOne({
         $or: [{ email: newUser.email }, { username: newUser.username }],
       });
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY);
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: "10h" });
       const userToFront = { ...user._doc, token: token };
       delete userToFront.password;
 
@@ -62,5 +61,7 @@ async function logOut(req, res) {
   console.log("logged out successfully");
   res.json({ message: "Logged out successfully" });
 }
+
+//TODO: hacer edit password
 
 module.exports = { login, signUp, logOut };

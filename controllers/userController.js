@@ -1,58 +1,17 @@
 const User = require("../models/User");
 const Tweet = require("../models/Tweet");
 const bcrypt = require("bcryptjs");
+const formidable = require("formidable");
 
 // Display the specified resource.
-async function show(req, res) {
-  const { username } = req.params;
+async function index(req, res) {
+  const user = await User.findOne({ username: req.body.username }).populate("tweets");
 
-  const user = await User.findOne({ username: username }).populate("tweets");
-
-  //const isFollowing = user.followers.includes(loggedInUserId);
-  return res.render("pages/userProfile", { user });
-}
-
-// Show the form for creating a new resource
-async function create(req, res) {
-  return res.render("createUser");
-}
-
-// Store a newly created resource in storage.
-async function store(req, res) {
-  const form = formidable({
-    multiples: false,
-    uploadDir: __dirname + "/../public/img",
-    keepExtensions: true,
-  });
-
-  form.parse(req, async (err, fields, files) => {
-    const passwordHasheada = await bcrypt.hash(fields.password, 10);
-    const user = new User({
-      firstname: fields.firstname,
-      lastname: fields.lastname,
-      username: fields.username,
-      description: fields.description,
-      password: passwordHasheada,
-      avatar: files.avatar.newFilename,
-    });
-    await user.save();
-    return res.redirect("home");
-  });
-}
-
-// Show the form for editing the specified resource.
-async function edit(req, res) {
-  const { id } = req.params;
-
-  const user = await User.findByPk(id);
-
-  return res.render("editUser", { user });
+  return res.json(user);
 }
 
 // Update the specified resource in storage.
-async function update(req, res) {
-  const id = req.params.id;
-
+function update(req, res) {
   const form = formidable({
     multiples: false,
     uploadDir: __dirname + "/../public/img",
@@ -60,74 +19,66 @@ async function update(req, res) {
   });
 
   form.parse(req, async (err, fields, files) => {
-    const passwordHasheada = await bcrypt.hash(fields.password, 10);
     const userUpdate = {
       firstname: fields.firstname,
       lastname: fields.lastname,
       username: fields.username,
       description: fields.description,
-      password: passwordHasheada,
       avatar: files.avatar.newFilename,
     };
 
-    await User.findByIdAndUpdate(id, userUpdate);
+    const user = await User.findByIdAndUpdate(req.auth.userId, userUpdate, { new: true });
+    console.log(user);
 
-    return res.redirect("home");
+    return res.json(user);
   });
 }
 
-// Remove the specified resource from storage.
-async function destroy(req, res) {
-  const { id } = req.params;
+async function handlerFollow(req, res) {
+  const userToFollow = await User.findById(req.body.followingId);
+  const currentUser = await User.findById(req.auth.userId);
 
-  const user = await User.findByPk(id);
+  let msg = "";
 
-  await user.destroy();
+  if (!userToFollow.followers.includes(req.auth.userId)) {
+    userToFollow.followers.push(req.auth.userId);
+    currentUser.following.push(req.body.followingId);
+    await userToFollow.save();
+    await currentUser.save();
+    msg = "followed";
+  } else {
+    const newFollowers = userToFollow.followers.filter((follower) => follower != req.auth.userId);
+    userToFollow.followers = newFollowers;
+    await userToFollow.save();
 
-  return res.redirect("/");
-}
-
-async function addFollower(req, res) {
-  const { userId, followerId } = req.params;
-
-  await User.findByIdAndUpdate(userId, { $addToSet: { followers: followerId } }, { new: true });
-
-  return res.redirect("home");
-}
-
-async function removeFollower(req, res) {
-  const { userId, followerId } = req.params;
-
-  await User.findByIdAndUpdate(userId, { $pull: { followers: followerId } }, { new: true });
-
-  return res.redirect("home");
+    const newFollowings = currentUser.following.filter(
+      (following) => following != req.body.followingId,
+    );
+    currentUser.following = newFollowings;
+    await currentUser.save();
+    msg = "unfollowed";
+  }
+  res.status(201).send(msg);
 }
 
 async function getFollowers(req, res) {
-  const loggedInUserId = req.user.id;
+  const username = req.body.username;
+  const user = await User.findOne({ username }).populate("followers");
 
-  const user = await User.findById(loggedInUserId).populate("followers");
-
-  return res.render("pages/followers", { followers: user.followers });
+  return res.json(user.followers);
 }
 
 async function getFollowing(req, res) {
-  const loggedInUserId = req.user.id;
+  const username = req.body.username;
+  const user = await User.findOne({ username }).populate("following");
 
-  const user = await User.findById(loggedInUserId).populate("following");
-
-  return res.render("pages/followings", { following: user.following });
+  return res.json(user.following);
 }
 
 module.exports = {
-  show,
-  create,
-  store,
-  edit,
+  index,
   update,
-  destroy,
-  addFollower,
-  removeFollower,
+  handlerFollow,
   getFollowers,
   getFollowing,
 };

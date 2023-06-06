@@ -1,59 +1,58 @@
 const User = require("../models/User");
 const Tweet = require("../models/Tweet");
+const { update } = require("lodash");
 
-function index(req, res) {
-  res.send("Home");
-}
+async function index(req, res) {
+  const tweets = [];
+  const user = await User.findById(req.auth.userId);
 
-function create(req, res) {
-  return res.render("createTweet");
+  for (let i = 0; i < user.following.length; i++) {
+    const followingTweets = await User.findById(user.following[i]).populate("tweets");
+    tweets.push(followingTweets.tweets);
+  }
+
+  res.json(tweets);
 }
 
 async function store(req, res) {
-  const { content, authorId } = req.body;
+  const newTweet = await Tweet.create({
+    content: req.body.content,
+    author: req.auth.userId,
+  });
 
-  const author = await User.findById(authorId);
-
-  const tweet = new Tweet({ content, author });
-
-  await tweet.save();
-
-  return res.redirect("/tweets");
+  newTweet
+    ? res.json(newTweet)
+    : res.status(409).send({ message: "Something went wrong, try again later" });
 }
 
 async function destroy(req, res) {
-  const { id } = req.params;
+  const id = req.params.id;
 
   await Tweet.findByIdAndDelete(id);
 
-  return res.redirect("/tweets");
+  return res.status(200).send({ message: "Tweet deleted" });
 }
 
 async function likesHandler(req, res) {
-  const tweet = await Tweet.findById(req.body.tweetId);
+  const id = req.body.tweetId;
+  const tweet = await Tweet.findById(id);
+  let msg = "";
 
-  const liked = tweet.likes.includes(req.body.id);
-
-  if (!liked) {
-    console.log("liked");
-    tweet.likes.push(req.user._id);
+  if (!tweet.likes.includes(req.auth.userId)) {
+    tweet.likes.push(req.auth.userId);
+    await tweet.save();
+    msg = "liked";
   } else {
-    console.log("unliked");
-    const newLikes = tweet.likes.filter((like) => {
-      return like !== req.user._id;
-    });
-    console.log(newLikes);
-    // tweet.likes.push(newLikes);
+    const newLikes = tweet.likes.filter((like) => like != req.auth.userId);
+    tweet.likes = newLikes;
+    await tweet.save();
+    msg = "unliked";
   }
-
-  await tweet.save();
-
-  return res.redirect("back");
+  res.status(201).send(msg);
 }
 
 module.exports = {
   index,
-  create,
   store,
   destroy,
   likesHandler,

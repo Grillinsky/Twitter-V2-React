@@ -14,7 +14,7 @@ module.exports = async () => {
         firstname: faker.name.firstName(),
         lastname: faker.name.lastName(),
         username: "@" + faker.internet.userName(),
-        password: bcrypt.hashSync(process.env.SESSION_CREDENTIAL, 10),
+        password: await bcrypt.hash(process.env.SESSION_CREDENTIAL, 10),
         email: faker.internet.email(),
         description: faker.lorem.sentence(15),
         avatar: faker.image.avatar(),
