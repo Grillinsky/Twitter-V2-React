@@ -11,8 +11,7 @@ async function login(req, res) {
 
     if (checkPass) {
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY);
-      const userToFront = { ...user._doc, token: token };
-      delete userToFront.password;
+      const userToFront = { userId: user.id, token: token };
 
       return res.status(201).json(userToFront);
     }
