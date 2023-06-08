@@ -1,5 +1,6 @@
 const { mongoose, Schema } = require("../db");
 const bcrypt = require("bcryptjs");
+const slugify = require("slugify");
 
 const userSchema = new mongoose.Schema({
   firstname: String,
@@ -41,6 +42,17 @@ const userSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+});
+
+userSchema.virtual("slug").get(function () {
+  return slugify(this.username, {
+    replacement: "-", // replace spaces with replacement character, defaults to `-`
+    remove: undefined, // remove characters that match regex, defaults to `undefined`
+    lower: true, // convert to lower case, defaults to `false`
+    strict: true, // strip special characters except replacement, defaults to `false`
+    locale: "en", // language code of the locale to use
+    trim: true, // trim leading and trailing replacement chars, defaults to `true`
+  });
 });
 
 userSchema.pre("save", async function (next) {
