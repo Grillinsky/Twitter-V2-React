@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const formidable = require("formidable");
 
 async function login(req, res) {
   const user = await User.findOne({
@@ -11,7 +12,12 @@ async function login(req, res) {
 
     if (checkPass) {
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: "10h" });
-      const userToFront = { userId: user.id, token: token };
+      const userToFront = {
+        userId: user.id,
+        token: token,
+        username: user.username,
+        avatar: user.avatar,
+      };
 
       return res.status(201).json(userToFront);
     }
@@ -21,38 +27,51 @@ async function login(req, res) {
 }
 
 async function signUp(req, res) {
-  console.log(req.body);
-  const user = await User.findOne({
-    $or: [{ email: req.body.email }, { username: req.body.username }],
+  const form = formidable({
+    multiples: false,
+    uploadDir: __dirname + "/../public/img",
+    keepExtensions: true,
   });
 
-  if (user) {
-    console.log(user);
-    return res
-      .status(409)
-      .send({ message: "User already registered, try with an other email or username" });
-  } else {
-    const newUser = await User.create({
-      email: req.body.email,
-      firstname: req.body.firstname,
-      lastname: req.body.lastname,
-      username: req.body.username,
-      password: await bcrypt.hash(req.body.password, 10), // TODO: pasar el hasheo de pass al modelo buscar middlewares de mongoose
+  form.parse(req, async (err, fields, files) => {
+    console.log(fields.email);
+    const user = await User.findOne({
+      $or: [{ email: fields.email }, { username: fields.username }],
     });
 
-    if (newUser) {
-      const user = await User.findOne({
-        $or: [{ email: newUser.email }, { username: newUser.username }],
-      });
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: "10h" });
-      const userToFront = { ...user._doc, token: token };
-      delete userToFront.password;
-
-      return res.status(201).json(userToFront);
+    if (user) {
+      return res
+        .status(409)
+        .send({ message: "User already registered, try with an other email or username" });
     } else {
-      return res.status(502).send({ message: "User cannot be created, try later" });
+      const stringifyPass = fields.password;
+      const newUser = await User.create({
+        firstname: fields.firstname,
+        lastname: fields.lastname,
+        username: fields.username,
+        email: fields.email,
+        password: stringifyPass.toString(),
+      });
+
+      if (files.avatar) {
+        newUser.avatar = files.avatar.newFilename;
+        newUser.save();
+      }
+      if (newUser) {
+        const user = await User.findOne({
+          $or: [{ email: newUser.email }, { username: newUser.username }],
+        });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, {
+          expiresIn: "10h",
+        });
+        const userToFront = { userId: user.id, token: token, username: user.username };
+
+        return res.status(201).json(userToFront);
+      } else {
+        return res.status(502).send({ message: "User cannot be created, try later" });
+      }
     }
-  }
+  });
 }
 
 async function logOut(req, res) {

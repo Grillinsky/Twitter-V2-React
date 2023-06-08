@@ -1,13 +1,16 @@
 const User = require("../models/User");
-const Tweet = require("../models/Tweet");
-const bcrypt = require("bcryptjs");
 const formidable = require("formidable");
 
 // Display the specified resource.
 async function index(req, res) {
-  const user = await User.findOne({ username: req.body.username }).populate("tweets");
+  const user = await User.findById(req.auth.userId).populate({
+    path: "tweets",
+    populate: { path: "author", options: { strictPopulate: false } },
+  });
+  const userToFront = { ...user._doc };
+  delete userToFront.password;
 
-  return res.json(user);
+  return res.json(userToFront);
 }
 
 // Update the specified resource in storage.
@@ -30,7 +33,10 @@ function update(req, res) {
     const user = await User.findByIdAndUpdate(req.auth.userId, userUpdate, { new: true });
     console.log(user);
 
-    return res.json(user);
+    const userToFront = { ...user._doc };
+    delete userToFront.password;
+
+    return res.json(userToFront);
   });
 }
 
@@ -62,15 +68,13 @@ async function handlerFollow(req, res) {
 }
 
 async function getFollowers(req, res) {
-  const username = req.body.username;
-  const user = await User.findOne({ username }).populate("followers");
+  const user = await User.findOne(req.body.username).populate("followers");
 
   return res.json(user.followers);
 }
 
 async function getFollowing(req, res) {
-  const username = req.body.username;
-  const user = await User.findOne({ username }).populate("following");
+  const user = await User.findOne(req.body.username).populate("following");
 
   return res.json(user.following);
 }

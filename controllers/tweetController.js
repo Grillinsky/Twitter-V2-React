@@ -7,7 +7,11 @@ async function index(req, res) {
   const user = await User.findById(req.auth.userId);
 
   for (let i = 0; i < user.following.length; i++) {
-    const followingTweets = await User.findById(user.following[i]).populate("tweets");
+    const followingTweets = await User.findById(user.following[i]).populate({
+      path: "tweets",
+      populate: { path: "author", options: { strictPopulate: false } },
+    });
+
     tweets.push(followingTweets.tweets);
   }
 
@@ -26,11 +30,16 @@ async function store(req, res) {
 }
 
 async function destroy(req, res) {
-  const id = req.params.id;
-
-  await Tweet.findByIdAndDelete(id);
+  await Tweet.findByIdAndDelete(req.body.tweetId);
 
   return res.status(200).send({ message: "Tweet deleted" });
+}
+
+async function getTweet(req, res) {
+  console.log(req.params);
+  const tweet = await Tweet.findById(req.params.id).populate("author");
+  console.log(tweet);
+  return res.json(tweet);
 }
 
 async function likesHandler(req, res) {
@@ -55,5 +64,6 @@ module.exports = {
   index,
   store,
   destroy,
+  getTweet,
   likesHandler,
 };
