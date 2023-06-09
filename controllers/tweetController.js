@@ -23,15 +23,23 @@ async function store(req, res) {
     content: req.body.content,
     author: req.auth.userId,
   });
-
+  const user = await User.findById(req.auth.userId);
+  user.tweets.push(newTweet._id);
+  await user.save();
   newTweet
     ? res.json(newTweet)
     : res.status(409).send({ message: "Something went wrong, try again later" });
 }
 
 async function destroy(req, res) {
-  await Tweet.findByIdAndDelete(req.body.tweetId);
+  //await Tweet.findByIdAndDelete(req.params.id);
 
+  const user = await User.findById(req.auth.userId);
+  const aux = user.tweets;
+  const newTweet = aux.filter((t) => t.id !== req.params.id);
+  user.tweets = newTweet;
+  console.log(user.tweets);
+  console.log(req.params.id);
   return res.status(200).send({ message: "Tweet deleted" });
 }
 
