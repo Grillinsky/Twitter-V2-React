@@ -3,14 +3,14 @@ const formidable = require("formidable");
 
 // Display the specified resource.
 async function index(req, res) {
-  const user = await User.findOne({ username: req.params.username }).populate({
-    path: "tweets",
-    populate: { path: "author", options: { strictPopulate: false } },
-  });
-  const userToFront = user._doc;
-  delete userToFront.password;
+  const user = await User.findOne({ username: req.params.username })
+    .populate({
+      path: "tweets",
+      populate: { path: "author", options: { strictPopulate: false } },
+    })
+    .select("-password");
 
-  return res.json(userToFront);
+  return res.json(user);
 }
 
 // Update the specified resource in storage.

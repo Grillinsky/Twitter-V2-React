@@ -3,17 +3,14 @@ const Tweet = require("../models/Tweet");
 const { update } = require("lodash");
 
 async function index(req, res) {
-  const tweets = [];
   const user = await User.findById(req.auth.userId);
 
-  for (let i = 0; i < user.following.length; i++) {
-    const followingTweets = await User.findById(user.following[i]).populate({
-      path: "tweets",
-      populate: { path: "author", options: { strictPopulate: false } },
-    });
-
-    tweets.push(followingTweets.tweets);
-  }
+  const tweets = await Tweet.find({
+    author: { $in: [...user.following, user] },
+  })
+    .limit(20)
+    .sort({ createdAt: -1 })
+    .populate("author");
 
   res.json(tweets);
 }
