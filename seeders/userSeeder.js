@@ -3,7 +3,7 @@ const User = require("../models/User");
 const Tweet = require("../models/Tweet");
 const bcrypt = require("bcryptjs");
 
-faker.locale = "es";
+faker.locale = "en";
 
 module.exports = async () => {
   const users = [];
@@ -14,7 +14,7 @@ module.exports = async () => {
         firstname: faker.name.firstName(),
         lastname: faker.name.lastName(),
         username: faker.internet.userName(),
-        password: process.env.SESSION_CREDENTIAL.toString(),
+        password: await bcrypt.hash(process.env.SESSION_CREDENTIAL, 10),
         email: faker.internet.email(),
         description: faker.lorem.sentence(15),
         avatar: faker.image.avatar(),

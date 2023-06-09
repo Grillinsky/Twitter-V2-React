@@ -70,7 +70,6 @@ async function handlerFollow(req, res) {
 async function getFollowers(req, res) {
   console.log(req.body);
   const user = await User.findOne({ username: req.params.username }).populate("followers");
-  console.log(user.followers);
   return res.json(user.followers);
 }
 
@@ -78,7 +77,6 @@ async function getFollowing(req, res) {
   console.log(req.body);
 
   const user = await User.findOne({ username: req.params.username }).populate("following");
-  console.log(user);
 
   return res.json(user.following);
 }

@@ -43,15 +43,13 @@ async function destroy(req, res) {
 }
 
 async function getTweet(req, res) {
-  console.log(req.params);
   const tweet = await Tweet.findById(req.params.id).populate("author");
-  console.log(tweet);
+
   return res.json(tweet);
 }
 
 async function likesHandler(req, res) {
-  const id = req.body.tweetId;
-  const tweet = await Tweet.findById(id);
+  const tweet = await Tweet.findById(req.params.id);
   let msg = "";
 
   if (!tweet.likes.includes(req.auth.userId)) {
