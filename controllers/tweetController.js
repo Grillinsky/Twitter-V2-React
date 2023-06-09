@@ -32,14 +32,13 @@ async function store(req, res) {
 }
 
 async function destroy(req, res) {
-  //await Tweet.findByIdAndDelete(req.params.id);
+  await Tweet.findByIdAndDelete(req.params.id);
 
   const user = await User.findById(req.auth.userId);
   const aux = user.tweets;
-  const newTweet = aux.filter((t) => t.id !== req.params.id);
+  const newTweet = aux.filter((t) => t._id != req.params.id);
   user.tweets = newTweet;
-  console.log(user.tweets);
-  console.log(req.params.id);
+  await user.save();
   return res.status(200).send({ message: "Tweet deleted" });
 }
 
