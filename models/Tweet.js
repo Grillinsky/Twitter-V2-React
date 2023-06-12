@@ -24,7 +24,6 @@ const tweetSchema = new mongoose.Schema({
     },
   ],
 });
-
 tweetSchema.set("toJSON", { virtuals: true });
 
 // tweetSchema.methods.toJSON = function () {
