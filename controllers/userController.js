@@ -30,52 +30,56 @@ function update(req, res) {
       avatar: files.avatar.newFilename,
     };
 
-    const user = await User.findByIdAndUpdate(req.auth.userId, userUpdate, { new: true });
-    console.log(user);
+    const user = await User.findByIdAndUpdate(req.auth.userId, userUpdate, { new: true }).select(
+      "-password",
+    );
 
-    const userToFront = user._doc;
-    delete userToFront.password;
-
-    return res.json(userToFront);
+    return res.json(user);
   });
 }
 
 async function handlerFollow(req, res) {
-  const userToFollow = await User.findById(req.body.followingId);
+  const userToFollow = await User.findOne({ username: req.params.username });
   const currentUser = await User.findById(req.auth.userId);
 
   let msg = "";
 
   if (!userToFollow.followers.includes(req.auth.userId)) {
     userToFollow.followers.push(req.auth.userId);
-    currentUser.following.push(req.body.followingId);
+    currentUser.following.push(userToFollow._id);
     await userToFollow.save();
     await currentUser.save();
     msg = "followed";
+    console.log(msg);
   } else {
     const newFollowers = userToFollow.followers.filter((follower) => follower != req.auth.userId);
+    const newFollowings = [];
+
+    for (let i = 0; i < currentUser.following.length; i++) {
+      if (currentUser.following[i].toString() != userToFollow.id) {
+        newFollowings.push(currentUser.following[i]);
+      }
+    }
+
+    console.log(newFollowings);
     userToFollow.followers = newFollowers;
+    currentUser.following = newFollowings;
+
+    await currentUser.save();
     await userToFollow.save();
 
-    const newFollowings = currentUser.following.filter(
-      (following) => following != req.body.followingId,
-    );
-    currentUser.following = newFollowings;
-    await currentUser.save();
     msg = "unfollowed";
+    console.log(msg);
   }
   res.status(201).send(msg);
 }
 
 async function getFollowers(req, res) {
-  console.log(req.body);
   const user = await User.findOne({ username: req.params.username }).populate("followers");
   return res.json(user.followers);
 }
 
 async function getFollowing(req, res) {
-  console.log(req.body);
-
   const user = await User.findOne({ username: req.params.username }).populate("following");
 
   return res.json(user.following);

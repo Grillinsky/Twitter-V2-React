@@ -5,14 +5,19 @@ const { update } = require("lodash");
 async function index(req, res) {
   const user = await User.findById(req.auth.userId);
 
-  const tweets = await Tweet.find({
-    author: { $in: [...user.following, user] },
-  })
-    .limit(20)
-    .sort({ createdAt: -1 })
-    .populate("author");
-
-  res.json(tweets);
+  console.log(user, req.auth.userId);
+  try {
+    const tweets = await Tweet.find({
+      author: { $in: [...user.following, user] },
+    })
+      .limit(20)
+      .sort({ createdAt: "desc" })
+      .populate("author")
+      .select("-password");
+    res.json(tweets);
+  } catch (error) {
+    console.log("error");
+  }
 }
 
 async function store(req, res) {

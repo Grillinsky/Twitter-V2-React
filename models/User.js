@@ -55,6 +55,16 @@ userSchema.virtual("slug").get(function () {
   });
 });
 
+userSchema.methods.toJSON = function () {
+  const user = this.toObject();
+  user.id = user._id.toString();
+  delete user.password;
+  delete user._id;
+  return user;
+};
+
+// userSchema.set("toJSON", { virtuals: true });
+
 userSchema.pre("save", async function (next) {
   // Solo hashear la contraseña si ha sido modificada o es nueva
   if (!this.isModified("password")) {

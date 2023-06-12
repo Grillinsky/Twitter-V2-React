@@ -16,7 +16,7 @@ router.post("/tweets/:id", tweetController.likesHandler);
 router.delete("/tweets/:id", tweetController.destroy);
 router.get("/:username", userController.index);
 router.patch("/:username", userController.update);
-router.post("/:username", userController.handlerFollow);
+router.post("/:username/follow", userController.handlerFollow);
 router.get("/:username/followers", userController.getFollowers);
 router.get("/:username/followings", userController.getFollowing);
 

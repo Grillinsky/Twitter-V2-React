@@ -25,4 +25,11 @@ const tweetSchema = new mongoose.Schema({
   ],
 });
 
+tweetSchema.methods.toJSON = function () {
+  const tweet = this.toObject();
+  tweet.id = tweet._id.toString();
+  delete tweet._id;
+  return tweet;
+};
+
 module.exports = mongoose.model("Tweet", tweetSchema);

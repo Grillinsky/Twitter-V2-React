@@ -12,14 +12,9 @@ async function login(req, res) {
 
     if (checkPass) {
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: "10h" });
-      const userToFront = {
-        userId: user.id,
-        token: token,
-        username: user.username,
-        avatar: user.avatar,
-      };
+      user._doc.token = token;
 
-      return res.status(201).json(userToFront);
+      return res.status(201).json(user);
     }
   } else {
     return res.status(401).send({ message: "Incorrect Credentials" });
