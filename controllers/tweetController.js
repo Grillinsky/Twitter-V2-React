@@ -5,7 +5,6 @@ const { update } = require("lodash");
 async function index(req, res) {
   const user = await User.findById(req.auth.userId);
 
-  console.log(user, req.auth.userId);
   try {
     const tweets = await Tweet.find({
       author: { $in: [...user.following, user] },
@@ -14,6 +13,8 @@ async function index(req, res) {
       .sort({ createdAt: "desc" })
       .populate("author")
       .select("-password");
+
+    console.log(tweets);
     res.json(tweets);
   } catch (error) {
     console.log("error");
