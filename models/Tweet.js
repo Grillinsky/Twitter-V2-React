@@ -24,12 +24,13 @@ const tweetSchema = new mongoose.Schema({
     },
   ],
 });
+tweetSchema.set("toJSON", { virtuals: true });
 
-tweetSchema.methods.toJSON = function () {
-  const tweet = this.toObject();
-  tweet.id = tweet._id.toString();
-  delete tweet._id;
-  return tweet;
-};
+// tweetSchema.methods.toJSON = function () {
+//   const tweet = this.toObject();
+//   tweet.id = tweet._id.toString();
+//   delete tweet._id;
+//   return tweet;
+// };
 
 module.exports = mongoose.model("Tweet", tweetSchema);
